@@ -51,7 +51,8 @@ const authenticateToken = (req, res, next) => {
 // 1. Obtener estado de todos los números (para la matriz)
 // Esta ruta debe ser accesible públicamente para que el frontend muestre los tickets disponibles.
 app.get('/api/tickets', (req, res) => {
-  db.all("SELECT number, status FROM tickets", [], (err, rows) => {
+  // CAMBIO: Añadido ORDER BY number ASC para garantizar que siempre salgan en orden 1-200
+  db.all("SELECT number, status FROM tickets ORDER BY number ASC", [], (err, rows) => {
     if (err) {
       console.error("Error al obtener tickets:", err.message);
       return res.status(500).json({ error: err.message });
