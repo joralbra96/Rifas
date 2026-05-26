@@ -167,6 +167,49 @@ app.post('/api/admin/tickets/:number/reset', authenticateToken, (req, res) => {
   });
 });
 
+// --- Nueva ruta para descargar CSV de ventas ---
+app.get('/api/admin/download-csv', authenticateToken, (req, res) => {
+  db.all("SELECT number, name, phone, address FROM tickets WHERE status = 'sold' ORDER BY number", [], (err, rows) => {
+    if (err) {
+      console.error("Error al obtener tickets vendidos para CSV:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "No hay tickets vendidos para descargar." });
+    }
+
+    // Formatear los datos a CSV
+    const csvRows = [];
+    // Añadir cabeceras
+    csvRows.push('Número,Nombre,Teléfono,Dirección');
+
+    rows.forEach(row => {
+      // Escapar comas y comillas dobles dentro de los campos si es necesario
+      const escapeCsvField = (field) => {
+        if (field === null || field === undefined) return '';
+        const stringField = String(field);
+        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+          // Si el campo contiene comas, saltos de línea o comillas, lo envolvemos en comillas dobles y escapamos las comillas existentes
+          return `"${stringField.replace(/"/g, '""')}"`;
+        }
+        return stringField;
+      };
+
+      csvRows.push(`${escapeCsvField(row.number)},${escapeCsvField(row.name)},${escapeCsvField(row.phone)},${escapeCsvField(row.address)}`);
+    });
+
+    const csvString = csvRows.join('\n');
+
+    // Establecer cabeceras para descarga de CSV
+    res.setHeader('Content-disposition', 'attachment; filename=ventas_rifa.csv');
+    res.setHeader('Content-Type', 'text/csv');
+    res.send(csvString);
+  });
+});
+
+// --- Fin de la nueva ruta CSV ---
+
 // --- Inicio del servidor ---
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
