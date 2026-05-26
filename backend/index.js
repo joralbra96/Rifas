@@ -65,7 +65,9 @@ app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
   // Buscar usuario en la base de datos
-  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+  // CAMBIO AQUÍ: Usar el placeholder correcto ($1 para Postgres, ? para SQLite)
+  const placeholder = process.env.DATABASE_URL ? '$1' : '?';
+  db.get(`SELECT * FROM users WHERE username = ${placeholder}`, [username], (err, user) => {
     if (err) {
       console.error("Error en consulta de login:", err.message);
       return res.status(500).json({ error: err.message });
@@ -223,4 +225,4 @@ app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
   console.log(`Modo: ${process.env.DATABASE_URL ? 'Producción (PostgreSQL)' : 'Desarrollo (SQLite)'}`);
   console.log(`Clave secreta usada: ${SECRET_KEY.substring(0, 10)}...`); // Muestra solo el inicio de la clave
-});
+}); 
