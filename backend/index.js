@@ -104,7 +104,7 @@ app.post('/api/tickets/:number/buy', authenticateToken, (req, res) => {
   }
 
   // Verificar si el número está disponible ANTES de actualizar
-  db.get("SELECT status FROM tickets WHERE number = ?", [number], (err, row) => {
+  db.get("SELECT status FROM tickets WHERE number = $1", [number], (err, row) => {
     if (err) {
       console.error("Error al verificar disponibilidad:", err.message);
       return res.status(500).json({ error: err.message });
@@ -117,13 +117,17 @@ app.post('/api/tickets/:number/buy', authenticateToken, (req, res) => {
     }
 
     // Si está disponible, proceder a actualizar
-    const query = `UPDATE tickets SET name = ?, phone = ?, address = ?, status = 'sold' WHERE number = ?`;
-    db.run(query, [name, phone, address, number], function(err) { // Usamos 'function' para acceder a 'this.changes'
+    const query = `UPDATE tickets SET name = $1, phone = $2, address = $3, status = 'sold' WHERE number = $4`;
+    db.run(query, [name, phone, address, number], function(err, result) {
       if (err) {
         console.error("Error al registrar venta:", err.message);
         return res.status(500).json({ error: err.message });
       }
-      if (this.changes === 0) { // Si no se actualizó ninguna fila
+
+      // Manejo de resultados modificado para soportar tanto sqlite (this.changes) como pg (result.rowCount)
+      const rowsAffected = result ? result.rowCount : (this ? this.changes : 0);
+
+      if (rowsAffected === 0) {
           return res.status(404).json({ error: "Número no encontrado o ya vendido" });
       }
       console.log(`Número ${number} vendido a ${name}`);
@@ -153,13 +157,17 @@ app.get('/api/admin/tickets', authenticateToken, (req, res) => {
 app.post('/api/admin/tickets/:number/reset', authenticateToken, (req, res) => {
   const { number } = req.params;
 
-  const query = `UPDATE tickets SET name = NULL, phone = NULL, address = NULL, status = 'available' WHERE number = ?`;
-  db.run(query, [number], function(err) { // Usamos 'function' para acceder a 'this.changes'
+  const query = `UPDATE tickets SET name = NULL, phone = NULL, address = NULL, status = 'available' WHERE number = $1`;
+  db.run(query, [number], function(err, result) {
     if (err) {
       console.error(`Error al resetear número ${number}:`, err.message);
       return res.status(500).json({ error: err.message });
     }
-    if (this.changes === 0) { // Si no se actualizó ninguna fila
+
+    // Manejo de resultados modificado para soportar tanto sqlite como pg
+    const rowsAffected = result ? result.rowCount : (this ? this.changes : 0);
+
+    if (rowsAffected === 0) {
         return res.status(404).json({ error: "Número no encontrado o no estaba vendido" });
     }
     console.log(`Número ${number} liberado.`);
