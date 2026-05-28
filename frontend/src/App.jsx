@@ -207,6 +207,23 @@ function App() {
                 <Tag className="text-indigo-600" />
                 {selectedTicket ? `Venta: Número ${selectedTicket}` : 'Selecciona un número'}
               </h2>
+              {/* === MÉTRICA DE RIFAS VENDIDAS === */}
+              <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200 shadow-inner">
+                <h3 className="text-lg font-semibold text-indigo-800 mb-2">Resumen de Ventas</h3>
+                <p className="text-2xl font-bold text-indigo-700 mb-1">
+                  {tickets.filter(t => t.status === 'sold').length} / {tickets.length}
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${(tickets.filter(t => t.status === 'sold').length / tickets.length) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  {((tickets.filter(t => t.status === 'sold').length / tickets.length) * 100).toFixed(1)}% Vendido
+                </p>
+              </div>
+              {/* === FIN MÉTRICA === */}
               {selectedTicket ? (
                 <form onSubmit={handleBuy} className="space-y-4">
                   <div>
@@ -254,8 +271,8 @@ function App() {
                   </div>
                   <p className="text-gray-500 italic">Haz clic en una casilla disponible para registrar la venta.</p>
                 </div>
-              )}
-            </div>
+        )}
+    </div>
           </div>
         )}
 
